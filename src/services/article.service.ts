@@ -3,16 +3,94 @@ import { generateId } from '../utils/generateId.js';
 import type { Article, CreateArticleDTO, UpdateArticleDTO, ArticleFilters, ArticleStatus } from '../models/article.model.js';
 
 export class ArticleService {
+    private validateArticleData(data: CreateArticleDTO | UpdateArticleDTO, isUpdate: boolean = false) {
+        const errors: string[] = [];
+
+        // Validate title
+        if (data.title !== undefined) {
+            if (!data.title || data.title.trim().length < 5) {
+                errors.push('Le titre doit contenir au moins 5 caractères');
+            }
+        } else if (!isUpdate) {
+            errors.push('Le titre est obligatoire');
+        }
+
+        // Validate content
+        if (data.content !== undefined) {
+            if (!data.content || data.content.trim().length < 50) {
+                errors.push('Le contenu doit contenir au moins 50 caractères');
+            }
+        } else if (!isUpdate) {
+            errors.push('Le contenu est obligatoire');
+        }
+
+        // Validate categories
+        if ('categories' in data) {
+            if (!data.categories || data.categories.length === 0) {
+                errors.push('L\'article doit avoir au moins une catégorie');
+            }
+        } else if (!isUpdate) {
+            errors.push('Au moins une catégorie est obligatoire');
+        }
+
+        // Validate network
+        if ('network' in data) {
+            if (!data.network || data.network.trim().length === 0) {
+                errors.push('Le réseau est obligatoire');
+            }
+        } else if (!isUpdate) {
+            errors.push('Le réseau est obligatoire');
+        }
+
+        if (errors.length > 0) {
+            throw new Error(errors.join(', '));
+        }
+    }
+
+    private validateArticleReferences(data: CreateArticleDTO | UpdateArticleDTO) {
+        const errors: string[] = [];
+
+        // Validate network exists
+        if ('network' in data && data.network) {
+            const network = db.prepare('SELECT id FROM networks WHERE id = ?').get(data.network);
+            if (!network) {
+                errors.push(`Le réseau avec l'ID "${data.network}" n'existe pas`);
+            }
+        }
+
+        // Validate categories exist
+        if ('categories' in data && data.categories && data.categories.length > 0) {
+            for (const categoryId of data.categories) {
+                const category = db.prepare('SELECT id FROM categories WHERE id = ?').get(categoryId);
+                if (!category) {
+                    errors.push(`La catégorie avec l'ID "${categoryId}" n'existe pas`);
+                }
+            }
+        }
+
+        if (errors.length > 0) {
+            throw new Error(errors.join(', '));
+        }
+    }
+
     findAll(filters: ArticleFilters = {}) {
-        const { status, network, category, featured, search, page = 1, limit = 10 } = filters;
+        const { status, network, categories, featured, search, page = 1, limit = 10 } = filters;
         const offset = (page - 1) * limit;
 
         let query = `
-            SELECT DISTINCT a.*
+            SELECT DISTINCT a.*, n.name as networkName
             FROM articles a
-            LEFT JOIN article_categories ac ON a.id = ac.articleId
-            WHERE 1=1
+            LEFT JOIN networks n ON a.network = n.id
         `;
+        
+        // Use INNER JOIN for article_categories when filtering by categories
+        if (categories && categories.length > 0) {
+            query += ` INNER JOIN article_categories ac ON a.id = ac.articleId`;
+        } else {
+            query += ` LEFT JOIN article_categories ac ON a.id = ac.articleId`;
+        }
+        
+        query += ` WHERE 1=1`;
         const params: any[] = [];
 
         if (status) {
@@ -25,9 +103,10 @@ export class ArticleService {
             params.push(network);
         }
 
-        if (category) {
-            query += ` AND ac.categoryId = ?`;
-            params.push(category);
+        if (categories && categories.length > 0) {
+            const placeholders = categories.map(() => '?').join(',');
+            query += ` AND ac.categoryId IN (${placeholders})`;
+            params.push(...categories);
         }
 
         if (featured !== undefined) {
@@ -67,9 +146,17 @@ export class ArticleService {
         let countQuery = `
             SELECT COUNT(DISTINCT a.id) as count
             FROM articles a
-            LEFT JOIN article_categories ac ON a.id = ac.articleId
-            WHERE 1=1
+            LEFT JOIN networks n ON a.network = n.id
         `;
+        
+        // Use INNER JOIN for article_categories when filtering by categories
+        if (categories && categories.length > 0) {
+            countQuery += ` INNER JOIN article_categories ac ON a.id = ac.articleId`;
+        } else {
+            countQuery += ` LEFT JOIN article_categories ac ON a.id = ac.articleId`;
+        }
+        
+        countQuery += ` WHERE 1=1`;
         const countParams: any[] = [];
 
         if (status) {
@@ -80,9 +167,10 @@ export class ArticleService {
             countQuery += ` AND a.network = ?`;
             countParams.push(network);
         }
-        if (category) {
-            countQuery += ` AND ac.categoryId = ?`;
-            countParams.push(category);
+        if (categories && categories.length > 0) {
+            const placeholders = categories.map(() => '?').join(',');
+            countQuery += ` AND ac.categoryId IN (${placeholders})`;
+            countParams.push(...categories);
         }
         if (featured !== undefined) {
             countQuery += ` AND a.featured = ?`;
@@ -108,7 +196,12 @@ export class ArticleService {
     }
 
     findById(id: string): Article | null {
-        const article = db.prepare('SELECT * FROM articles WHERE id = ?').get(id) as any;
+        const article = db.prepare(`
+            SELECT a.*, n.name as networkName
+            FROM articles a
+            LEFT JOIN networks n ON a.network = n.id
+            WHERE a.id = ?
+        `).get(id) as any;
 
         if (!article) return null;
 
@@ -128,6 +221,11 @@ export class ArticleService {
     }
 
     create(data: CreateArticleDTO): Article {
+        // Validate input data
+        this.validateArticleData(data);
+        // Validate that network and categories exist
+        this.validateArticleReferences(data);
+
         const id = generateId();
         const now = new Date().toISOString();
         const status = data.status || 'draft';
@@ -152,6 +250,11 @@ export class ArticleService {
     update(id: string, data: UpdateArticleDTO): Article | null {
         const article = this.findById(id);
         if (!article) return null;
+
+        // Validate input data for update
+        this.validateArticleData(data, true);
+        // Validate that network and categories exist
+        this.validateArticleReferences(data);
 
         const updates: string[] = [];
         const params: any[] = [];

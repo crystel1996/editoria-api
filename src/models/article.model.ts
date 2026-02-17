@@ -6,6 +6,7 @@ export interface Article {
     author: string;
     categories: string[]; // IDs des catégories
     network: string; // ID du réseau utilisateur
+    networkName?: string; // Nom du réseau
     status: ArticleStatus;
     featured: boolean;
     publishedAt: Date | null;
@@ -40,7 +41,7 @@ export interface UpdateArticleDTO {
 export interface ArticleFilters {
     status?: ArticleStatus;
     network?: string;
-    category?: string;
+    categories?: string[];
     featured?: boolean;
     search?: string;
     page?: number;

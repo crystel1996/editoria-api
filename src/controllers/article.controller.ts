@@ -6,10 +6,24 @@ import type { CreateArticleDTO, UpdateArticleDTO, ArticleStatus } from '../model
 export class ArticleController {
     async getAll(req: Request, res: Response) {
         try {
+            // Handle categories as array (comma-separated or multiple query params)
+            let categories: string[] | undefined;
+            
+            // Check for both 'categories' and 'categories[]' (HTML form standard)
+            const categoriesParam = req.query.categories || req.query['categories[]'];
+            
+            if (categoriesParam) {
+                if (Array.isArray(categoriesParam)) {
+                    categories = categoriesParam as string[];
+                } else {
+                    categories = (categoriesParam as string).split(',').filter(c => c);
+                }
+            }
+
             const filters = {
                 status: req.query.status as ArticleStatus | undefined,
                 network: req.query.network as string | undefined,
-                category: req.query.category as string | undefined,
+                categories: categories,
                 featured: req.query.featured === 'true' ? true : req.query.featured === 'false' ? false : undefined,
                 search: req.query.search as string | undefined,
                 page: req.query.page ? parseInt(req.query.page as string) : 1,
