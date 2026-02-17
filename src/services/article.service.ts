@@ -74,7 +74,7 @@ export class ArticleService {
     }
 
     findAll(filters: ArticleFilters = {}) {
-        const { status, network, categories, featured, search, page = 1, limit = 10 } = filters;
+        const { status, network, categories, featured, search, page = 1, limit = 20 } = filters;
         const offset = (page - 1) * limit;
 
         let query = `
@@ -340,6 +340,32 @@ export class ArticleService {
         db.prepare(`UPDATE articles SET ${updates.join(', ')} WHERE id = ?`).run(...params);
 
         return this.findById(id);
+    }
+
+    updateStatusBatch(ids: (string | number)[], status: ArticleStatus): void {
+        if (ids.length === 0) return;
+
+        const placeholders = ids.map(() => '?').join(',');
+        const now = new Date().toISOString();
+        
+        // Update status and updatedAt
+        let query = `UPDATE articles SET status = ?, updatedAt = ?`;
+        const params: any[] = [status, now];
+
+        // Set publishedAt when status changes to published (only for articles not already published)
+        if (status === 'published') {
+            query += ` WHERE id IN (${placeholders}) AND status != 'published'`;
+            params.push(...ids);
+            db.prepare(query).run(...params);
+
+            // Update publishedAt for articles being published
+            const publishQuery = `UPDATE articles SET publishedAt = ? WHERE id IN (${placeholders}) AND publishedAt IS NULL AND status = 'published'`;
+            db.prepare(publishQuery).run(now, ...ids);
+        } else {
+            query += ` WHERE id IN (${placeholders})`;
+            params.push(...ids);
+            db.prepare(query).run(...params);
+        }
     }
 }
 

@@ -114,6 +114,25 @@ export class ArticleController {
         }
     }
 
+    async updateStatusBatch(req: Request, res: Response) {
+        try {
+            const { ids, status } = req.body;
+
+            if (!ids || !Array.isArray(ids) || ids.length === 0) {
+                return res.status(400).json({ error: 'IDs des articles manquants' });
+            }
+
+            if (!status || !['draft', 'published', 'archived'].includes(status)) {
+                return res.status(400).json({ error: 'Statut invalide' });
+            }
+
+            articleService.updateStatusBatch(ids, status as ArticleStatus);
+            res.status(204).send();
+        } catch (error: any) {
+            res.status(400).json({ error: error.message });
+        }
+    }
+
     async sendNotification(req: Request, res: Response) {
         try {
             const { recipients } = req.body;

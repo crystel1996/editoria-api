@@ -4,6 +4,7 @@ import articleController from '../controllers/article.controller.js';
 const router = Router();
 
 router.get('/', (req, res) => articleController.getAll(req, res));
+router.patch('/batch/status', (req, res) => articleController.updateStatusBatch(req, res));
 router.get('/:id', (req, res) => articleController.getById(req, res));
 router.post('/', (req, res) => articleController.create(req, res));
 router.put('/:id', (req, res) => articleController.update(req, res));
