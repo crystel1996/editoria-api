@@ -2,6 +2,7 @@ import db from './utils/database.js';
 import categoryService from './services/category.service.js';
 import networkService from './services/network.service.js';
 import articleService from './services/article.service.js';
+import notificationService from './services/notification.service.js';
 
 // Clear existing data
 db.exec(`
@@ -110,5 +111,26 @@ const articles = [
 ];
 
 console.log(`Created ${articles.length} articles`);
+
+// Create notifications
+const notifications = [
+    notificationService.create({
+        articleId: articles[0].id,
+        recipients: ['contact@example.com', 'redaction@journal.fr', 'info@media.com'],
+        subject: `Nouvel article : ${articles[0].title}`,
+    }),
+    notificationService.create({
+        articleId: articles[1].id,
+        recipients: ['culture@journal.fr', 'redaction@journal.fr'],
+        subject: `Nouvel article : ${articles[1].title}`,
+    }),
+    notificationService.create({
+        articleId: articles[2].id,
+        recipients: ['economie@journal.fr'],
+        subject: `Nouvel article : ${articles[2].title}`,
+    }),
+];
+
+console.log(`Created ${notifications.length} notifications`);
 console.log('Database seeded successfully!');
 console.log('\nYou can now start the server with: npm run dev');
