@@ -11,6 +11,10 @@ export class NetworkService {
         return db.prepare('SELECT * FROM networks WHERE id = ?').get(id) as Network | null;
     }
 
+    findByName(name: string): Network | null {
+        return db.prepare('SELECT * FROM networks WHERE name = ?').get(name) as Network | null;
+    }
+
     create(data: CreateNetworkDTO): Network {
         const id = generateId();
 
