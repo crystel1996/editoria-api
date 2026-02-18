@@ -1,0 +1,42 @@
+[
+  {
+    "title": "Introduction au développement Fullstack",
+    "content": "Le développement fullstack consiste à travailler sur le frontend et le backend d'une application moderne en utilisant des technologies comme React, Node.js et une base de données relationnelle.",
+    "excerpt": "Comprendre les bases du développement fullstack.",
+    "author": "Jean Dupont",
+    "category": "developpement-web",
+    "network": "tech-hub"
+  },
+  {
+    "title": "Pourquoi utiliser Next.js ?",
+    "content": "Next.js est un framework basé sur React qui permet le rendu côté serveur (SSR), la génération statique (SSG) et une excellente optimisation SEO.",
+    "excerpt": "Les avantages clés de Next.js.",
+    "author": "Marie Rakoto",
+    "category": "framework",
+    "network": "react-community"
+  },
+  {
+    "title": "Optimiser les performances avec React",
+    "content": "Pour améliorer les performances d'une application React, il est important d'utiliser React.memo, useMemo et useCallback lorsque cela est nécessaire.",
+    "excerpt": "Techniques d'optimisation React.",
+    "author": "Paul Martin",
+    "category": "frontend",
+    "network": "frontend-devs"
+  },
+  {
+    "title": "Introduction à PostgreSQL",
+    "content": "PostgreSQL est un système de gestion de base de données relationnelle open source puissant, adapté aux applications critiques et évolutives.",
+    "excerpt": "Découvrir PostgreSQL rapidement.",
+    "author": "Clara Andrian",
+    "category": "base-de-donnees",
+    "network": "data-engineering"
+  },
+  {
+    "title": "Créer une API REST avec Express",
+    "content": "Express.js est un framework minimaliste pour Node.js permettant de créer rapidement des API REST robustes et maintenables.",
+    "excerpt": "Construire une API REST simplement.",
+    "author": "Lucas Bernard",
+    "category": "backend",
+    "network": "nodejs-developers"
+  }
+]
